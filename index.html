@@ -497,7 +497,6 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
     padding-bottom: env(safe-area-inset-bottom);
   }
 
-  /* Header 在手机端取消 sticky，避免和预览区 sticky 叠加 */
   header{
     position:relative;
     top:auto;
@@ -688,7 +687,7 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
   <span class="sub" data-i18n="subtitle">上传图片 · 提取双色 · 生成波点</span>
   <div class="header-right">
     <button class="lang-btn" id="langBtn" aria-label="switch language">EN</button>
-    <span class="stamp">v2.0</span>
+    <span class="stamp">v2.2</span>
   </div>
 </header>
 
@@ -741,23 +740,23 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
       <div class="sec-head"><span><span class="mark">■</span><span data-i18n="dots">波点参数</span></span></div>
 
       <label class="slider-row">
-        <div class="slider-label"><span data-i18n="radius">半径</span><span class="v" id="vRadius">14px</span></div>
-        <input type="range" id="radius" min="2" max="60" value="14">
+        <div class="slider-label"><span data-i18n="radius">半径</span><span class="v" id="vRadius">20px</span></div>
+        <input type="range" id="radius" min="2" max="80" value="20">
       </label>
 
       <label class="slider-row">
-        <div class="slider-label"><span data-i18n="gap">间距</span><span class="v" id="vGap">20px</span></div>
-        <input type="range" id="gap" min="0" max="80" value="20">
+        <div class="slider-label"><span data-i18n="gap">间距</span><span class="v" id="vGap">50px</span></div>
+        <input type="range" id="gap" min="0" max="120" value="50">
       </label>
 
       <label class="slider-row">
-        <div class="slider-label"><span data-i18n="jitter">抖动</span><span class="v" id="vJitter">30%</span></div>
-        <input type="range" id="jitter" min="0" max="100" value="30">
+        <div class="slider-label"><span data-i18n="jitter">抖动</span><span class="v" id="vJitter">0%</span></div>
+        <input type="range" id="jitter" min="0" max="100" value="0">
       </label>
 
       <label class="slider-row">
-        <div class="slider-label"><span data-i18n="sizeVar">大小随机</span><span class="v" id="vSize">25%</span></div>
-        <input type="range" id="sizeVariance" min="0" max="100" value="25">
+        <div class="slider-label"><span data-i18n="sizeVar">大小随机</span><span class="v" id="vSize">0%</span></div>
+        <input type="range" id="sizeVariance" min="0" max="100" value="0">
       </label>
 
       <div class="select-row">
@@ -774,6 +773,9 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
         <select id="shape">
           <option value="circle" data-i18n="circle">圆形</option>
           <option value="square" data-i18n="square">方形 · 像素</option>
+          <option value="heart" data-i18n="heart">爱心</option>
+          <option value="star" data-i18n="star">星星</option>
+          <option value="drop" data-i18n="drop">雨滴</option>
         </select>
       </div>
     </section>
@@ -781,7 +783,7 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
     <hr>
 
     <section class="sec">
-      <div class="sec-head"><span><span class="mark">■</span><span data-i18n="canvas">画布尺寸</span></span></div>
+      <div class="sec-head"><span><span class="mark">■</span><span data-i18n="canvas">画布尺寸 (px)</span></span></div>
       <div class="row2">
         <input type="number" id="cw" value="1600" min="200" max="6000" step="10">
         <input type="number" id="ch" value="1000" min="200" max="6000" step="10">
@@ -803,6 +805,9 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
         <button class="chip" data-preset="sparse" data-i18n="pSparse">稀疏</button>
         <button class="chip" data-preset="random" data-i18n="pRandom">随机</button>
         <button class="chip" data-preset="pixel" data-i18n="pPixel">像素</button>
+        <button class="chip" data-preset="heart" data-i18n="pHeart">爱心</button>
+        <button class="chip" data-preset="star" data-i18n="pStar">星星</button>
+        <button class="chip" data-preset="rain" data-i18n="pRain">雨滴</button>
         <button class="chip" data-preset="social" data-i18n="pSocial">社交</button>
       </div>
     </section>
@@ -825,6 +830,7 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
     <span data-i18n="dbgCount">点数</span><b id="dbgCount">—</b>
     <span data-i18n="dbgTime">耗时</span><b id="dbgTime">—</b>
     <span data-i18n="dbgSeed">种子</span><b id="dbgSeed">—</b>
+    <span data-i18n="dbgShape">形状</span><b id="dbgShape">—</b>
   </div>
   <h3 data-i18n="dbgSampleTitle">// 采样</h3>
   <img id="dbgSample" alt="sample" hidden>
@@ -838,7 +844,10 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
 
 <script type="module">
 /* ==========================================================================
-   波点工厂 / Polka Maker — 响应式双语版
+   波点工厂 / Polka Maker — 响应式双语版 v2.2
+   - 雨滴形状改为「圆底 + 顶部尖点」
+   - 默认参数：半径 20px，间距 50px，抖动 0，大小随机 0
+   - 画布尺寸标题带 (px) 单位提示
    ========================================================================== */
 
 /* ============================== i18n =================================== */
@@ -870,13 +879,19 @@ const I18N = {
     random: '随机',
     circle: '圆形',
     square: '方形 · 像素',
-    canvas: '画布尺寸',
+    heart: '爱心',
+    star: '星星',
+    drop: '雨滴',
+    canvas: '画布尺寸 (px)',
     presets: '预设',
     pDefault: '默认',
     pCompact: '紧凑',
     pSparse: '稀疏',
     pRandom: '随机',
     pPixel: '像素',
+    pHeart: '爱心',
+    pStar: '星星',
+    pRain: '雨滴',
     pSocial: '社交',
     shuffle: '↻ 换排布',
     download: '↓ 下载',
@@ -889,6 +904,7 @@ const I18N = {
     dbgCount: '点数',
     dbgTime: '耗时',
     dbgSeed: '种子',
+    dbgShape: '形状',
     dbgSampleTitle: '// 采样',
     dbgToolsTitle: '// 工具',
     guidesOn: '辅助线：开',
@@ -927,13 +943,19 @@ const I18N = {
     random: 'RANDOM',
     circle: 'CIRCLE',
     square: 'SQUARE · px',
-    canvas: 'CANVAS',
+    heart: 'HEART',
+    star: 'STAR',
+    drop: 'DROP',
+    canvas: 'CANVAS (px)',
     presets: 'PRESETS',
     pDefault: 'DEFAULT',
     pCompact: 'COMPACT',
     pSparse: 'SPARSE',
     pRandom: 'RANDOM',
     pPixel: 'PIXEL',
+    pHeart: 'HEART',
+    pStar: 'STAR',
+    pRain: 'RAIN',
     pSocial: 'SOCIAL',
     shuffle: '↻ SHUFFLE',
     download: '↓ SAVE',
@@ -946,6 +968,7 @@ const I18N = {
     dbgCount: 'dots',
     dbgTime: 'time',
     dbgSeed: 'seed',
+    dbgShape: 'shape',
     dbgSampleTitle: '// SAMPLE',
     dbgToolsTitle: '// TOOLS',
     guidesOn: 'GUIDES: ON',
@@ -975,10 +998,10 @@ const CONFIG = {
     fallbackColors: ['#f7f2e4', '#3d9090'],
   },
   dot: {
-    defaultRadius: 14,
-    defaultGap: 20,
-    defaultJitter: 30,
-    defaultSizeVariance: 25,
+    defaultRadius: 20,
+    defaultGap: 50,
+    defaultJitter: 0,
+    defaultSizeVariance: 0,
     arrangement: 'hex',
     shape: 'circle',
     seed: 7,
@@ -1246,9 +1269,105 @@ const DotEngine = (() => {
 const CanvasRenderer = (() => {
   let canvas, ctx;
   function init(el) { canvas = el; ctx = el.getContext('2d'); }
+
   const rgbToHex = (c) => '#' + [c.r, c.g, c.b]
     .map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0'))
     .join('');
+
+  /* 爱心：16 sin³t / 13cos t − 5cos 2t − 2cos 3t − cos 4t */
+  function addHeartPath(c, x, y, r) {
+    const s = r / 15;
+    const segments = 22;
+    for (let i = 0; i <= segments; i++) {
+      const tt = (i / segments) * Math.PI * 2;
+      const st = Math.sin(tt);
+      const hx = 16 * st * st * st;
+      const hy = -(13 * Math.cos(tt) - 5 * Math.cos(2 * tt) - 2 * Math.cos(3 * tt) - Math.cos(4 * tt)) - 6;
+      const px = x + hx * s;
+      const py = y + hy * s;
+      if (i === 0) c.moveTo(px, py);
+      else c.lineTo(px, py);
+    }
+    c.closePath();
+  }
+
+  /* 五角星：外半径 r，内半径 0.45r，从顶部开始 */
+  function addStarPath(c, x, y, r) {
+    const outer = r * 1.02;
+    const inner = r * 0.45;
+    const rot = -Math.PI / 2;
+    for (let i = 0; i < 10; i++) {
+      const ang = rot + (i * Math.PI) / 5;
+      const rad = (i % 2 === 0) ? outer : inner;
+      const px = x + Math.cos(ang) * rad;
+      const py = y + Math.sin(ang) * rad;
+      if (i === 0) c.moveTo(px, py);
+      else c.lineTo(px, py);
+    }
+    c.closePath();
+  }
+
+  /* 雨滴：底部是一个饱满的圆，顶部收成尖点。
+     思路：把底部圆当作主体，从其两条切点各引一条贝塞尔到顶部尖点。 */
+  function addDropPath(c, x, y, r) {
+    const cy = y + r * 0.30;
+    const cr = r * 0.70;
+    const tipY = y - r;
+
+    const dy = cy - tipY;
+    const sinT = cr / dy;
+    const cosT = Math.sqrt(Math.max(0, 1 - sinT * sinT));
+
+    const rtx = x + cr * cosT;
+    const rty = cy - cr * sinT;
+    const ltx = x - cr * cosT;
+    const lty = cy - cr * sinT;
+
+    c.moveTo(x, tipY);
+
+    c.bezierCurveTo(
+      x + r * 0.28, tipY + r * 0.42,
+      rtx,          rty - r * 0.32,
+      rtx,          rty
+    );
+
+    let sa = Math.atan2(rty - cy, rtx - x);
+    let ea = Math.atan2(lty - cy, ltx - x);
+    if (ea <= sa) ea += Math.PI * 2;
+    c.arc(x, cy, cr, sa, ea, false);
+
+    c.bezierCurveTo(
+      ltx,          lty - r * 0.32,
+      x - r * 0.28, tipY + r * 0.42,
+      x,            tipY
+    );
+
+    c.closePath();
+  }
+
+  /* 把指定形状追加到当前路径 */
+  function addShape(c, x, y, r, shape) {
+    switch (shape) {
+      case 'square':
+        c.rect(x - r, y - r, r * 2, r * 2);
+        break;
+      case 'heart':
+        addHeartPath(c, x, y, r);
+        break;
+      case 'star':
+        addStarPath(c, x, y, r);
+        break;
+      case 'drop':
+        addDropPath(c, x, y, r);
+        break;
+      case 'circle':
+      default:
+        c.moveTo(x + r, y);
+        c.arc(x, y, r, 0, Math.PI * 2);
+        break;
+    }
+  }
+
   function render(state) {
     const t0 = performance.now();
     const { width: W, height: H } = state.canvasSize;
@@ -1257,6 +1376,7 @@ const CanvasRenderer = (() => {
     }
     ctx.fillStyle = rgbToHex(state.backgroundColor);
     ctx.fillRect(0, 0, W, H);
+
     const dots = DotEngine.compute(W, H, {
       radius: state.params.radius,
       gap: state.params.gap,
@@ -1265,19 +1385,15 @@ const CanvasRenderer = (() => {
       arrangement: state.params.arrangement,
       seed: state.params.seed,
     });
+
     ctx.fillStyle = rgbToHex(state.dotColor);
-    if (state.params.shape === 'square') {
-      for (const d of dots) {
-        ctx.fillRect(d.x - d.r, d.y - d.r, d.r * 2, d.r * 2);
-      }
-    } else {
-      ctx.beginPath();
-      for (const d of dots) {
-        ctx.moveTo(d.x + d.r, d.y);
-        ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
-      }
-      ctx.fill();
+    ctx.beginPath();
+    const shape = state.params.shape;
+    for (const d of dots) {
+      addShape(ctx, d.x, d.y, d.r, shape);
     }
+    ctx.fill();
+
     if (CONFIG.debug.enabled && CONFIG.debug.showGridGuides) {
       const step = Math.max(1, state.params.radius * 2 + state.params.gap);
       const rowH = state.params.arrangement === 'hex' ? step * Math.sqrt(3) / 2 : step;
@@ -1293,21 +1409,26 @@ const CanvasRenderer = (() => {
       }
       ctx.restore();
     }
+
     state.renderTime = performance.now() - t0;
     state.dotCount = dots.length;
   }
-  return { init, render, rgbToHex };
+
+  return { init, render, rgbToHex, addShape };
 })();
 
 /* =========================== PresetManager ============================== */
 const PresetManager = (() => {
   const P = {
-    default: { dot: { radius: 14, gap: 20, jitter: 30, sizeVariance: 25, arrangement: 'hex', shape: 'circle' }, canvas: { width: 1600, height: 1000 } },
-    compact: { dot: { radius: 8,  gap: 10, jitter: 15, sizeVariance: 10, arrangement: 'hex', shape: 'circle' }, canvas: { width: 1920, height: 1080 } },
-    sparse:  { dot: { radius: 22, gap: 40, jitter: 40, sizeVariance: 30, arrangement: 'hex', shape: 'circle' }, canvas: { width: 1920, height: 1080 } },
+    default: { dot: { radius: 20, gap: 50, jitter: 0,  sizeVariance: 0,  arrangement: 'hex',    shape: 'circle' }, canvas: { width: 1600, height: 1000 } },
+    compact: { dot: { radius: 8,  gap: 10, jitter: 15, sizeVariance: 10, arrangement: 'hex',    shape: 'circle' }, canvas: { width: 1920, height: 1080 } },
+    sparse:  { dot: { radius: 24, gap: 60, jitter: 40, sizeVariance: 30, arrangement: 'hex',    shape: 'circle' }, canvas: { width: 1920, height: 1080 } },
     random:  { dot: { radius: 14, gap: 24, jitter: 80, sizeVariance: 60, arrangement: 'random', shape: 'circle' }, canvas: { width: 1920, height: 1080 } },
-    pixel:   { dot: { radius: 6,  gap: 4,  jitter: 0,  sizeVariance: 0,  arrangement: 'grid', shape: 'square' }, canvas: { width: 1080, height: 1080 } },
-    social:  { dot: { radius: 10, gap: 14, jitter: 20, sizeVariance: 15, arrangement: 'hex', shape: 'circle' }, canvas: { width: 1080, height: 1080 } },
+    pixel:   { dot: { radius: 6,  gap: 4,  jitter: 0,  sizeVariance: 0,  arrangement: 'grid',   shape: 'square' }, canvas: { width: 1080, height: 1080 } },
+    heart:   { dot: { radius: 20, gap: 40, jitter: 15, sizeVariance: 20, arrangement: 'hex',    shape: 'heart'  }, canvas: { width: 1080, height: 1080 } },
+    star:    { dot: { radius: 20, gap: 45, jitter: 25, sizeVariance: 30, arrangement: 'hex',    shape: 'star'   }, canvas: { width: 1080, height: 1080 } },
+    rain:    { dot: { radius: 24, gap: 50, jitter: 10, sizeVariance: 15, arrangement: 'hex',    shape: 'drop'   }, canvas: { width: 1080, height: 1920 } },
+    social:  { dot: { radius: 10, gap: 14, jitter: 20, sizeVariance: 15, arrangement: 'hex',    shape: 'circle' }, canvas: { width: 1080, height: 1080 } },
   };
   const applyToState = (id, state) => {
     const p = P[id];
@@ -1575,6 +1696,7 @@ const DebugManager = (() => {
     $('#dbgCount').textContent = state.dotCount.toLocaleString();
     $('#dbgTime').textContent = state.renderTime.toFixed(1) + ' ms';
     $('#dbgSeed').textContent = state.params.seed;
+    $('#dbgShape').textContent = state.params.shape;
     const cands = $('#dbgCands');
     if (cands.childElementCount !== state.candidates.length) {
       cands.innerHTML = '';
@@ -1626,6 +1748,7 @@ const DebugManager = (() => {
       setBackgroundColor: (r, g, b) => { state.backgroundColor = { r, g, b }; state.source = 'manual'; syncColorUI(); scheduleRender(); },
       swapColors: () => { const tmp = state.dotColor; state.dotColor = state.backgroundColor; state.backgroundColor = tmp; syncColorUI(); scheduleRender(); },
       setDotParams: (p) => { Object.assign(state.params, p); syncParamUI(); scheduleRender(); },
+      setShape: (shape) => { state.params.shape = shape; syncParamUI(); scheduleRender(); },
       exportConfig: () => JSON.stringify({
         colors: { dot: rgbToHex(state.dotColor), bg: rgbToHex(state.backgroundColor) },
         params: state.params, canvas: state.canvasSize,
