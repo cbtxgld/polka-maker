@@ -230,6 +230,43 @@ header .stamp{
 }
 @keyframes fadeIn{from{opacity:0;transform:rotate(-1deg) scale(.97)}to{opacity:1;transform:rotate(-.6deg)}}
 
+/* 自定义图片上传区（内嵌） */
+#customDrop{
+  padding:10px;
+  transform:none;
+}
+#customDrop::before{
+  content:attr(data-label);
+  top:-10px;left:10px;font-size:12px;
+}
+#customDrop:hover{transform:none}
+#customPreview{
+  width:100%;max-height:80px;object-fit:contain;
+  display:block;margin:0 auto 6px;
+  background:
+    linear-gradient(45deg,var(--paper-3) 25%,transparent 25%) 0 0/10px 10px,
+    linear-gradient(-45deg,var(--paper-3) 25%,transparent 25%) 0 5px/10px 10px,
+    linear-gradient(45deg,transparent 75%,var(--paper-3) 75%) 5px -5px/10px 10px,
+    linear-gradient(-45deg,transparent 75%,var(--paper-3) 75%) -5px 0/10px 10px;
+  border:1px solid var(--line);
+}
+
+/* 格式要求提示 */
+.format-note{
+  margin:6px 2px 0;
+  font-family:var(--font-label);
+  font-size:12px;
+  line-height:1.5;
+  color:var(--ink-faint);
+  letter-spacing:.02em;
+}
+.format-note strong{
+  color:var(--teal-deep);
+  font-weight:400;
+  font-family:var(--font-title);
+  font-size:12px;
+}
+
 /* ============ Section ============ */
 .sec{display:flex;flex-direction:column;gap:10px}
 .sec-head{
@@ -687,7 +724,7 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
   <span class="sub" data-i18n="subtitle">上传图片 · 提取双色 · 生成波点</span>
   <div class="header-right">
     <button class="lang-btn" id="langBtn" aria-label="switch language">EN</button>
-    <span class="stamp">v2.6</span>
+    <span class="stamp">v2.8</span>
   </div>
 </header>
 
@@ -776,7 +813,22 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
           <option value="heart" data-i18n="heart">爱心</option>
           <option value="star" data-i18n="star">星星</option>
           <option value="drop" data-i18n="drop">雨滴</option>
+          <option value="custom" data-i18n="custom">自定义图片</option>
         </select>
+      </div>
+
+      <!-- 自定义图片上传（选中时显示） -->
+      <div id="customRow" hidden>
+        <div class="drop" id="customDrop" data-label="图片">
+          <input type="file" id="customFile" accept="image/*" hidden>
+          <img id="customPreview" alt="" hidden>
+          <div class="drop-hint" id="customHint" data-i18n-html="customHint">
+            <strong>+ 点击</strong> / 拖拽 / 粘贴
+          </div>
+        </div>
+        <p class="format-note" data-i18n-html="customFormat">
+          需要 <strong>透明背景 PNG</strong> · 单色图案 · 建议正方形 · 其它格式可能导致效果不理想
+        </p>
       </div>
     </section>
 
@@ -844,8 +896,11 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
 
 <script type="module">
 /* ==========================================================================
-   波点工厂 / Polka Maker — v2.6
-   - 雨滴形状改为经典「圆底 + 尖顶」水滴轮廓
+   波点工厂 / Polka Maker — v2.8
+   - 「自定义图片」形状：上传任意透明 PNG 作为波点
+   - 支持点击 / 拖拽 / 粘贴上传
+   - 未上传时画布显示占位提示
+   - 上传区显示格式要求
    ========================================================================== */
 
 const I18N = {
@@ -879,6 +934,12 @@ const I18N = {
     heart: '爱心',
     star: '星星',
     drop: '雨滴',
+    custom: '自定义图片',
+    customHint: '<strong>+ 点击</strong> / 拖拽 / 粘贴',
+    customHintReplace: '<strong>+ 点击</strong> 更换图片',
+    customImg: '图片',
+    customFormat: '需要 <strong>透明背景 PNG</strong> · 单色图案 · 建议正方形 · 其它格式可能效果不理想',
+    customEmptyHint: '请上传形状图片',
     canvas: '画布尺寸 (px)',
     presets: '预设',
     pDefault: '默认',
@@ -943,6 +1004,12 @@ const I18N = {
     heart: 'HEART',
     star: 'STAR',
     drop: 'DROP',
+    custom: 'CUSTOM IMAGE',
+    customHint: '<strong>+ CLICK</strong> / drag / paste',
+    customHintReplace: '<strong>+ CLICK</strong> to replace',
+    customImg: 'IMAGE',
+    customFormat: 'Requires a <strong>transparent PNG</strong> · monochrome · square recommended · other formats may not render well',
+    customEmptyHint: 'Please upload a shape image',
     canvas: 'CANVAS (px)',
     presets: 'PRESETS',
     pDefault: 'DEFAULT',
@@ -1286,7 +1353,6 @@ const CanvasRenderer = (() => {
     c.closePath();
   }
 
-  /* 经典五角星：外半径 r，内半径 = 0.382r（黄金比例） */
   function addStarPath(c, x, y, r) {
     const outer = r * 1.0;
     const inner = r * 0.382;
@@ -1302,21 +1368,18 @@ const CanvasRenderer = (() => {
     c.closePath();
   }
 
-  /* 雨滴：底部饱满圆 + 顶部尖点。
-     底部圆半径 rc，圆心 (x, cy)；从顶部尖点 (x, tipY) 向圆引两条切线，
-     切点以上用贝塞尔曲线连接，切点以下沿圆弧绘制。 */
   function addDropPath(c, x, y, r) {
-    const rc = r * 0.67;             // 底部圆半径（约 0.67r 时视觉比例接近参考图）
-    const cy = y + r - rc;           // 让底部最低点正好在 y + r
-    const tipY = y - r;              // 顶部尖点
+    const rc = r * 0.67;
+    const cy = y + r - rc;
+    const tipY = y - r;
 
-    const d = cy - tipY;             // 尖点到圆心的距离
-    const sA = rc / d;               // 半张角的正弦
-    const cA = Math.sqrt(1 - sA * sA); // 半张角的余弦
+    const d = cy - tipY;
+    const sA = rc / d;
+    const cA = Math.sqrt(1 - sA * sA);
 
-    const rtx = x + rc * cA;         // 右切点
+    const rtx = x + rc * cA;
     const rty = cy - rc * sA;
-    const ltx = x - rc * cA;         // 左切点
+    const ltx = x - rc * cA;
     const lty = cy - rc * sA;
 
     const tanLen = Math.sqrt(d * d - rc * rc);
@@ -1325,19 +1388,16 @@ const CanvasRenderer = (() => {
 
     c.moveTo(x, tipY);
 
-    // 右侧：尖点 → 右切点
     c.bezierCurveTo(
       x + sA * k1,   tipY + cA * k1,
       rtx - sA * k2, rty - cA * k2,
       rtx, rty
     );
 
-    // 底部圆弧：右切点经底部 → 左切点
-    const sa = Math.atan2(rty - cy, rtx - x);
-    const ea = Math.atan2(lty - cy, ltx - x);
+    let sa = Math.atan2(rty - cy, rtx - x);
+    let ea = Math.atan2(lty - cy, ltx - x);
     c.arc(x, cy, rc, sa, ea, false);
 
-    // 左侧：左切点 → 尖点
     c.bezierCurveTo(
       ltx + sA * k2, lty - cA * k2,
       x - sA * k1,   tipY + cA * k1,
@@ -1369,6 +1429,44 @@ const CanvasRenderer = (() => {
     }
   }
 
+  /* 自定义图片缓存：把用户上传的图着色成 dotColor 后缓存 */
+  const CUSTOM_CACHE_SIZE = 256;
+  let customCacheCv = null;
+  let customCacheSrc = null;
+
+  function getCustomCanvas(colorHex) {
+    const img = state.customImage;
+    if (!img) return null;
+    if (customCacheCv && customCacheSrc === colorHex) return customCacheCv;
+
+    const S = CUSTOM_CACHE_SIZE;
+    const cv = document.createElement('canvas');
+    cv.width = S; cv.height = S;
+    const c = cv.getContext('2d');
+    c.imageSmoothingEnabled = true;
+    c.imageSmoothingQuality = 'high';
+    // contain 适配，保持宽高比
+    const iw = img.naturalWidth || img.width;
+    const ih = img.naturalHeight || img.height;
+    const scale = Math.min(S / iw, S / ih);
+    const dw = iw * scale;
+    const dh = ih * scale;
+    c.drawImage(img, (S - dw) / 2, (S - dh) / 2, dw, dh);
+    // 用 dotColor 给非透明像素着色
+    c.globalCompositeOperation = 'source-in';
+    c.fillStyle = colorHex;
+    c.fillRect(0, 0, S, S);
+
+    customCacheCv = cv;
+    customCacheSrc = colorHex;
+    return cv;
+  }
+
+  function invalidateCustomCache() {
+    customCacheCv = null;
+    customCacheSrc = null;
+  }
+
   function render(state) {
     const t0 = performance.now();
     const { width: W, height: H } = state.canvasSize;
@@ -1377,6 +1475,9 @@ const CanvasRenderer = (() => {
     }
 
     canvas.dataset.shape = state.params.shape;
+
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
 
     ctx.fillStyle = rgbToHex(state.backgroundColor);
     ctx.fillRect(0, 0, W, H);
@@ -1390,16 +1491,43 @@ const CanvasRenderer = (() => {
       seed: state.params.seed,
     });
 
-    ctx.fillStyle = rgbToHex(state.dotColor);
     const shape = state.params.shape;
 
-    if (dots.length <= 8000) {
+    if (shape === 'custom') {
+      const cv = getCustomCanvas(rgbToHex(state.dotColor));
+      if (cv) {
+        for (const d of dots) {
+          ctx.drawImage(cv, d.x - d.r, d.y - d.r, d.r * 2, d.r * 2);
+        }
+      } else {
+        // 未上传图片：画虚线占位 + 中央提示
+        ctx.save();
+        ctx.strokeStyle = 'rgba(74,64,64,0.22)';
+        ctx.lineWidth = Math.max(1, W / 800);
+        ctx.setLineDash([Math.max(4, W / 200), Math.max(4, W / 200)]);
+        for (const d of dots) {
+          ctx.strokeRect(d.x - d.r, d.y - d.r, d.r * 2, d.r * 2);
+        }
+        ctx.restore();
+
+        ctx.save();
+        const fs = Math.max(16, Math.min(W, H) / 22);
+        ctx.fillStyle = 'rgba(74,64,64,0.55)';
+        ctx.font = `600 ${fs}px "ZCOOL QingKe HuangYou","PingFang SC","Microsoft YaHei",sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(t('customEmptyHint'), W / 2, H / 2);
+        ctx.restore();
+      }
+    } else if (dots.length <= 8000) {
+      ctx.fillStyle = rgbToHex(state.dotColor);
       for (const d of dots) {
         ctx.beginPath();
         addShape(ctx, d.x, d.y, d.r, shape);
         ctx.fill();
       }
     } else {
+      ctx.fillStyle = rgbToHex(state.dotColor);
       ctx.beginPath();
       for (const d of dots) {
         addShape(ctx, d.x, d.y, d.r, shape);
@@ -1427,7 +1555,7 @@ const CanvasRenderer = (() => {
     state.dotCount = dots.length;
   }
 
-  return { init, render, rgbToHex, addShape };
+  return { init, render, rgbToHex, addShape, invalidateCustomCache };
 })();
 
 /* =========================== PresetManager ============================== */
@@ -1469,6 +1597,7 @@ const state = {
   dotColor: { r: 61, g: 144, b: 144 },
   backgroundColor: { r: 247, g: 242, b: 228 },
   autoPair: null,
+  customImage: null,         // 用户上传的自定义形状图片（HTMLImageElement）
   params: {
     radius: CONFIG.dot.defaultRadius,
     gap: CONFIG.dot.defaultGap,
@@ -1523,6 +1652,19 @@ function syncParamUI() {
   $('#vSize').textContent = state.params.sizeVariance + '%';
   $('#cw').value = state.canvasSize.width;
   $('#ch').value = state.canvasSize.height;
+  syncCustomRow();
+}
+
+function syncCustomRow() {
+  const visible = state.params.shape === 'custom';
+  $('#customRow').hidden = !visible;
+  if (visible) {
+    if (state.customImage) {
+      $('#customHint').innerHTML = t('customHintReplace');
+    } else {
+      $('#customHint').innerHTML = t('customHint');
+    }
+  }
 }
 
 /* ============================ ImageLoader =============================== */
@@ -1560,13 +1702,52 @@ const ImageLoader = (() => {
       const f = e.dataTransfer.files[0];
       if (f) handleFile(f);
     });
-    window.addEventListener('paste', (e) => {
-      const items = [...((e.clipboardData && e.clipboardData.items) || [])];
-      const item = items.find(i => i.type.startsWith('image/'));
-      if (item) handleFile(item.getAsFile());
+  }
+  return { bind, handleFile };
+})();
+
+/* ==================== 自定义形状图片上传 ==================== */
+const CustomLoader = (() => {
+  function handleFile(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      state.customImage = img;
+      const prev = $('#customPreview');
+      prev.src = url;
+      prev.hidden = false;
+      $('#customHint').innerHTML = t('customHintReplace');
+      CanvasRenderer.invalidateCustomCache();
+      scheduleRender();
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); };
+    img.src = url;
+  }
+  function bind() {
+    const drop = $('#customDrop');
+    const file = $('#customFile');
+
+    drop.addEventListener('click', (e) => {
+      // 防止点击 file input 时冒泡导致重复触发
+      if (e.target === file) return;
+      file.click();
+    });
+    file.addEventListener('change', (e) => {
+      const f = e.target.files[0];
+      e.target.value = '';
+      if (f) handleFile(f);
+    });
+
+    drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
+    drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+    drop.addEventListener('drop', (e) => {
+      e.preventDefault(); drop.classList.remove('over');
+      const f = e.dataTransfer.files[0];
+      if (f) handleFile(f);
     });
   }
-  return { bind };
+  return { bind, handleFile };
 })();
 
 function runExtraction() {
@@ -1630,7 +1811,9 @@ const UIManager = (() => {
       state.params.arrangement = e.target.value; scheduleRender();
     });
     $('#shape').addEventListener('change', (e) => {
-      state.params.shape = e.target.value; scheduleRender();
+      state.params.shape = e.target.value;
+      syncCustomRow();
+      scheduleRender();
     });
   }
   function bindCanvas() {
@@ -1802,6 +1985,7 @@ const LangManager = (() => {
     document.title = I18N[lang].titleTag;
 
     syncColorUI();
+    syncCustomRow();
     DebugManager.updateGuidesBtn();
 
     try { localStorage.setItem('polka-lang', lang); } catch (e) {}
@@ -1816,11 +2000,31 @@ const LangManager = (() => {
   return { apply, bind };
 })();
 
+/* ==================== 全局粘贴分发 ==================== */
+/* 当前形状为「自定义图片」时，粘贴的图片作为形状图片；
+   其它形状时，粘贴的图片作为主图（提取颜色）。 */
+function bindGlobalPaste() {
+  window.addEventListener('paste', (e) => {
+    const items = [...((e.clipboardData && e.clipboardData.items) || [])];
+    const item = items.find(i => i.type.startsWith('image/'));
+    if (!item) return;
+    const file = item.getAsFile();
+    if (!file) return;
+    if (state.params.shape === 'custom') {
+      CustomLoader.handleFile(file);
+    } else {
+      ImageLoader.handleFile(file);
+    }
+  });
+}
+
 /* ================================ 启动 ================================== */
 (function init() {
   CanvasRenderer.init($('#preview'));
   UIManager.bind();
   ImageLoader.bind();
+  CustomLoader.bind();
+  bindGlobalPaste();
   DebugManager.bind();
   LangManager.bind();
   LangManager.apply(currentLang);
