@@ -407,7 +407,10 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
   border:2px solid var(--ink);
   box-shadow:6px 6px 0 var(--lilac),12px 12px 0 var(--pink);
   background:#fff;
-  image-rendering:pixelated;
+  image-rendering: auto;
+}
+#preview[data-shape="square"]{
+  image-rendering: pixelated;
 }
 
 /* ============ Debug ============ */
@@ -586,7 +589,7 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
 }
 
 /* ==================================================================
-   触摸设备：更大的点击区域
+   触摸设备
    ================================================================== */
 @media (hover: none) and (pointer: coarse){
   input[type=range]{height:8px}
@@ -602,7 +605,6 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
   .src-tag{padding:3px 9px 5px}
 }
 
-/* 小屏手机 (< 360px) */
 @media (max-width: 359px){
   :root{
     --header-pad-x: 12px;
@@ -615,7 +617,6 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
   .color-item input[type=color]{height:40px}
 }
 
-/* 横屏手机 */
 @media (max-width: 767px) and (orientation: landscape) and (max-height: 500px){
   .stage{
     height:50vh;
@@ -627,7 +628,6 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
   header h1{font-size:16px}
 }
 
-/* 大屏优化 */
 @media (min-width: 1440px){
   :root{
     --panel-w: 380px;
@@ -687,7 +687,7 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
   <span class="sub" data-i18n="subtitle">上传图片 · 提取双色 · 生成波点</span>
   <div class="header-right">
     <button class="lang-btn" id="langBtn" aria-label="switch language">EN</button>
-    <span class="stamp">v2.2</span>
+    <span class="stamp">v2.6</span>
   </div>
 </header>
 
@@ -844,13 +844,10 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
 
 <script type="module">
 /* ==========================================================================
-   波点工厂 / Polka Maker — 响应式双语版 v2.2
-   - 雨滴形状改为「圆底 + 顶部尖点」
-   - 默认参数：半径 20px，间距 50px，抖动 0，大小随机 0
-   - 画布尺寸标题带 (px) 单位提示
+   波点工厂 / Polka Maker — v2.6
+   - 雨滴形状改为经典「圆底 + 尖顶」水滴轮廓
    ========================================================================== */
 
-/* ============================== i18n =================================== */
 const I18N = {
   zh: {
     titleTag: '波点工厂 · Polka Maker',
@@ -985,7 +982,6 @@ const I18N = {
 let currentLang = document.documentElement.dataset.lang === 'en' ? 'en' : 'zh';
 const t = (key) => (I18N[currentLang] && I18N[currentLang][key]) || key;
 
-/* ============================== Config ================================== */
 const CONFIG = {
   color: {
     deltaEFormula: 'CIEDE2000',
@@ -1274,10 +1270,9 @@ const CanvasRenderer = (() => {
     .map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0'))
     .join('');
 
-  /* 爱心：16 sin³t / 13cos t − 5cos 2t − 2cos 3t − cos 4t */
   function addHeartPath(c, x, y, r) {
     const s = r / 15;
-    const segments = 22;
+    const segments = 72;
     for (let i = 0; i <= segments; i++) {
       const tt = (i / segments) * Math.PI * 2;
       const st = Math.sin(tt);
@@ -1291,10 +1286,10 @@ const CanvasRenderer = (() => {
     c.closePath();
   }
 
-  /* 五角星：外半径 r，内半径 0.45r，从顶部开始 */
+  /* 经典五角星：外半径 r，内半径 = 0.382r（黄金比例） */
   function addStarPath(c, x, y, r) {
-    const outer = r * 1.02;
-    const inner = r * 0.45;
+    const outer = r * 1.0;
+    const inner = r * 0.382;
     const rot = -Math.PI / 2;
     for (let i = 0; i < 10; i++) {
       const ang = rot + (i * Math.PI) / 5;
@@ -1307,45 +1302,51 @@ const CanvasRenderer = (() => {
     c.closePath();
   }
 
-  /* 雨滴：底部是一个饱满的圆，顶部收成尖点。
-     思路：把底部圆当作主体，从其两条切点各引一条贝塞尔到顶部尖点。 */
+  /* 雨滴：底部饱满圆 + 顶部尖点。
+     底部圆半径 rc，圆心 (x, cy)；从顶部尖点 (x, tipY) 向圆引两条切线，
+     切点以上用贝塞尔曲线连接，切点以下沿圆弧绘制。 */
   function addDropPath(c, x, y, r) {
-    const cy = y + r * 0.30;
-    const cr = r * 0.70;
-    const tipY = y - r;
+    const rc = r * 0.67;             // 底部圆半径（约 0.67r 时视觉比例接近参考图）
+    const cy = y + r - rc;           // 让底部最低点正好在 y + r
+    const tipY = y - r;              // 顶部尖点
 
-    const dy = cy - tipY;
-    const sinT = cr / dy;
-    const cosT = Math.sqrt(Math.max(0, 1 - sinT * sinT));
+    const d = cy - tipY;             // 尖点到圆心的距离
+    const sA = rc / d;               // 半张角的正弦
+    const cA = Math.sqrt(1 - sA * sA); // 半张角的余弦
 
-    const rtx = x + cr * cosT;
-    const rty = cy - cr * sinT;
-    const ltx = x - cr * cosT;
-    const lty = cy - cr * sinT;
+    const rtx = x + rc * cA;         // 右切点
+    const rty = cy - rc * sA;
+    const ltx = x - rc * cA;         // 左切点
+    const lty = cy - rc * sA;
+
+    const tanLen = Math.sqrt(d * d - rc * rc);
+    const k1 = tanLen * 0.55;
+    const k2 = tanLen * 0.32;
 
     c.moveTo(x, tipY);
 
+    // 右侧：尖点 → 右切点
     c.bezierCurveTo(
-      x + r * 0.28, tipY + r * 0.42,
-      rtx,          rty - r * 0.32,
-      rtx,          rty
+      x + sA * k1,   tipY + cA * k1,
+      rtx - sA * k2, rty - cA * k2,
+      rtx, rty
     );
 
-    let sa = Math.atan2(rty - cy, rtx - x);
-    let ea = Math.atan2(lty - cy, ltx - x);
-    if (ea <= sa) ea += Math.PI * 2;
-    c.arc(x, cy, cr, sa, ea, false);
+    // 底部圆弧：右切点经底部 → 左切点
+    const sa = Math.atan2(rty - cy, rtx - x);
+    const ea = Math.atan2(lty - cy, ltx - x);
+    c.arc(x, cy, rc, sa, ea, false);
 
+    // 左侧：左切点 → 尖点
     c.bezierCurveTo(
-      ltx,          lty - r * 0.32,
-      x - r * 0.28, tipY + r * 0.42,
-      x,            tipY
+      ltx + sA * k2, lty - cA * k2,
+      x - sA * k1,   tipY + cA * k1,
+      x, tipY
     );
 
     c.closePath();
   }
 
-  /* 把指定形状追加到当前路径 */
   function addShape(c, x, y, r, shape) {
     switch (shape) {
       case 'square':
@@ -1374,6 +1375,9 @@ const CanvasRenderer = (() => {
     if (canvas.width !== W || canvas.height !== H) {
       canvas.width = W; canvas.height = H;
     }
+
+    canvas.dataset.shape = state.params.shape;
+
     ctx.fillStyle = rgbToHex(state.backgroundColor);
     ctx.fillRect(0, 0, W, H);
 
@@ -1387,12 +1391,21 @@ const CanvasRenderer = (() => {
     });
 
     ctx.fillStyle = rgbToHex(state.dotColor);
-    ctx.beginPath();
     const shape = state.params.shape;
-    for (const d of dots) {
-      addShape(ctx, d.x, d.y, d.r, shape);
+
+    if (dots.length <= 8000) {
+      for (const d of dots) {
+        ctx.beginPath();
+        addShape(ctx, d.x, d.y, d.r, shape);
+        ctx.fill();
+      }
+    } else {
+      ctx.beginPath();
+      for (const d of dots) {
+        addShape(ctx, d.x, d.y, d.r, shape);
+      }
+      ctx.fill();
     }
-    ctx.fill();
 
     if (CONFIG.debug.enabled && CONFIG.debug.showGridGuides) {
       const step = Math.max(1, state.params.radius * 2 + state.params.gap);
