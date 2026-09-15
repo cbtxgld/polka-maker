@@ -724,7 +724,7 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
   <span class="sub" data-i18n="subtitle">上传图片 · 提取双色 · 生成波点</span>
   <div class="header-right">
     <button class="lang-btn" id="langBtn" aria-label="switch language">EN</button>
-    <span class="stamp">v2.8</span>
+    <span class="stamp">v2.9</span>
   </div>
 </header>
 
@@ -827,7 +827,7 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
           </div>
         </div>
         <p class="format-note" data-i18n-html="customFormat">
-          需要 <strong>透明背景 PNG</strong> · 单色图案 · 建议正方形 · 其它格式可能导致效果不理想
+          需要 <strong>透明背景 PNG</strong> · 单色图案 · 建议正方形 · 其它格式可能效果不理想
         </p>
       </div>
     </section>
@@ -896,11 +896,9 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
 
 <script type="module">
 /* ==========================================================================
-   波点工厂 / Polka Maker — v2.8
-   - 「自定义图片」形状：上传任意透明 PNG 作为波点
-   - 支持点击 / 拖拽 / 粘贴上传
-   - 未上传时画布显示占位提示
-   - 上传区显示格式要求
+   波点工厂 / Polka Maker — v2.9
+   - 修复：自定义图片上传区的小标签「图片」未随语言切换
+   - 修复：语言切换时画布未重绘，导致占位提示文字仍是旧语言
    ========================================================================== */
 
 const I18N = {
@@ -1429,7 +1427,7 @@ const CanvasRenderer = (() => {
     }
   }
 
-  /* 自定义图片缓存：把用户上传的图着色成 dotColor 后缓存 */
+  /* 自定义图片缓存 */
   const CUSTOM_CACHE_SIZE = 256;
   let customCacheCv = null;
   let customCacheSrc = null;
@@ -1445,14 +1443,12 @@ const CanvasRenderer = (() => {
     const c = cv.getContext('2d');
     c.imageSmoothingEnabled = true;
     c.imageSmoothingQuality = 'high';
-    // contain 适配，保持宽高比
     const iw = img.naturalWidth || img.width;
     const ih = img.naturalHeight || img.height;
     const scale = Math.min(S / iw, S / ih);
     const dw = iw * scale;
     const dh = ih * scale;
     c.drawImage(img, (S - dw) / 2, (S - dh) / 2, dw, dh);
-    // 用 dotColor 给非透明像素着色
     c.globalCompositeOperation = 'source-in';
     c.fillStyle = colorHex;
     c.fillRect(0, 0, S, S);
@@ -1597,7 +1593,7 @@ const state = {
   dotColor: { r: 61, g: 144, b: 144 },
   backgroundColor: { r: 247, g: 242, b: 228 },
   autoPair: null,
-  customImage: null,         // 用户上传的自定义形状图片（HTMLImageElement）
+  customImage: null,
   params: {
     radius: CONFIG.dot.defaultRadius,
     gap: CONFIG.dot.defaultGap,
@@ -1729,7 +1725,6 @@ const CustomLoader = (() => {
     const file = $('#customFile');
 
     drop.addEventListener('click', (e) => {
-      // 防止点击 file input 时冒泡导致重复触发
       if (e.target === file) return;
       file.click();
     });
@@ -1970,8 +1965,14 @@ const LangManager = (() => {
       if (I18N[lang][key] !== undefined) el.innerHTML = I18N[lang][key];
     });
 
+    // 主上传区标签
     const drop = $('#drop');
     drop.dataset.label = I18N[lang].dropLabel;
+
+    // ✅ 修复 1：自定义图片上传区的小标签也要跟着翻译
+    const customDrop = $('#customDrop');
+    if (customDrop) customDrop.dataset.label = I18N[lang].customImg;
+
     if (state.image) {
       $('#dropHint').innerHTML = I18N[lang].dropHintReplace;
     } else {
@@ -1989,6 +1990,9 @@ const LangManager = (() => {
     DebugManager.updateGuidesBtn();
 
     try { localStorage.setItem('polka-lang', lang); } catch (e) {}
+
+    // ✅ 修复 2：语言切换后重绘画布，让占位提示文字也跟着更新
+    scheduleRender();
   }
 
   function bind() {
@@ -2001,8 +2005,6 @@ const LangManager = (() => {
 })();
 
 /* ==================== 全局粘贴分发 ==================== */
-/* 当前形状为「自定义图片」时，粘贴的图片作为形状图片；
-   其它形状时，粘贴的图片作为主图（提取颜色）。 */
 function bindGlobalPaste() {
   window.addEventListener('paste', (e) => {
     const items = [...((e.clipboardData && e.clipboardData.items) || [])];
