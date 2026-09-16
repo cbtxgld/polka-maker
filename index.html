@@ -481,6 +481,46 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
 .debug .btn-row{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 
 /* ==================================================================
+   桌面端（≥ 768px）：操作栏内部滚动，预览区固定不动
+   ================================================================== */
+@media (min-width: 768px){
+  body{
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;         /* 锁住整页滚动 */
+  }
+  header{
+    position: relative;       /* 不需要 sticky，body 已经不滚动 */
+    top: auto;
+  }
+  .wrap{
+    min-height: 0;            /* 让 grid 正确计算高度 */
+    align-items: stretch;     /* 面板与预览区撑满整高 */
+  }
+  .panel{
+    overflow-y: auto;         /* 内部滚动 */
+    overscroll-behavior: contain;   /* 滚到边界不带动页面 */
+    -webkit-overflow-scrolling: touch;
+  }
+  .panel::-webkit-scrollbar{width:8px}
+  .panel::-webkit-scrollbar-track{background:transparent}
+  .panel::-webkit-scrollbar-thumb{
+    background:var(--line);
+    border-radius:4px;
+  }
+  .panel::-webkit-scrollbar-thumb:hover{
+    background:var(--ink-faint);
+  }
+  .stage{
+    overflow: hidden;         /* 预览区不滚动 */
+    min-height: 0;            /* 让 flex 居中不受 420px 最低高度限制 */
+  }
+  #preview{
+    max-height: 100%;         /* 让 canvas 自适应可用高度 */
+  }
+}
+
+/* ==================================================================
    平板：768px — 1023px
    ================================================================== */
 @media (min-width: 768px) and (max-width: 1023px){
@@ -497,7 +537,7 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
 }
 
 /* ==================================================================
-   手机：< 768px
+   手机：< 768px（保持整页滚动）
    ================================================================== */
 @media (max-width: 767px){
   :root{
@@ -899,6 +939,7 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
    波点工厂 / Polka Maker — v2.9
    - 修复：自定义图片上传区的小标签「图片」未随语言切换
    - 修复：语言切换时画布未重绘，导致占位提示文字仍是旧语言
+   - 桌面端：操作栏内部滚动，预览区固定不动
    ========================================================================== */
 
 const I18N = {
@@ -1965,11 +2006,9 @@ const LangManager = (() => {
       if (I18N[lang][key] !== undefined) el.innerHTML = I18N[lang][key];
     });
 
-    // 主上传区标签
     const drop = $('#drop');
     drop.dataset.label = I18N[lang].dropLabel;
 
-    // ✅ 修复 1：自定义图片上传区的小标签也要跟着翻译
     const customDrop = $('#customDrop');
     if (customDrop) customDrop.dataset.label = I18N[lang].customImg;
 
@@ -1991,7 +2030,6 @@ const LangManager = (() => {
 
     try { localStorage.setItem('polka-lang', lang); } catch (e) {}
 
-    // ✅ 修复 2：语言切换后重绘画布，让占位提示文字也跟着更新
     scheduleRender();
   }
 
