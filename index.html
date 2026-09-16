@@ -329,6 +329,26 @@ header .stamp{
 .de-hint.warn{color:#c46a3d}
 .de-hint.good{color:var(--teal-deep)}
 
+/* 快捷配色 chips */
+.color-chips{
+  display:flex;gap:6px;flex-wrap:wrap;
+}
+.color-chips .chip{
+  font-family:var(--font-title);font-size:var(--fs-chip);
+  padding:5px 9px 7px;letter-spacing:.04em;
+  background:rgba(255,255,255,.6);color:var(--ink-soft);
+  border:1.5px solid var(--ink);cursor:pointer;
+  transition:.12s;box-shadow:2px 2px 0 var(--ink);
+  line-height:1.1;
+}
+.color-chips .chip:hover{
+  background:var(--lilac-soft);color:var(--ink);
+  transform:translate(1px,1px);box-shadow:1px 1px 0 var(--ink);
+}
+.color-chips .chip:active{
+  transform:translate(2px,2px);box-shadow:0 0 0 var(--ink);
+}
+
 /* ============ 滑杆 ============ */
 .slider-row{display:flex;flex-direction:column;gap:6px}
 .slider-label{
@@ -487,19 +507,19 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
   body{
     height: 100vh;
     height: 100dvh;
-    overflow: hidden;         /* 锁住整页滚动 */
+    overflow: hidden;
   }
   header{
-    position: relative;       /* 不需要 sticky，body 已经不滚动 */
+    position: relative;
     top: auto;
   }
   .wrap{
-    min-height: 0;            /* 让 grid 正确计算高度 */
-    align-items: stretch;     /* 面板与预览区撑满整高 */
+    min-height: 0;
+    align-items: stretch;
   }
   .panel{
-    overflow-y: auto;         /* 内部滚动 */
-    overscroll-behavior: contain;   /* 滚到边界不带动页面 */
+    overflow-y: auto;
+    overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
   }
   .panel::-webkit-scrollbar{width:8px}
@@ -512,11 +532,11 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
     background:var(--ink-faint);
   }
   .stage{
-    overflow: hidden;         /* 预览区不滚动 */
-    min-height: 0;            /* 让 flex 居中不受 420px 最低高度限制 */
+    overflow: hidden;
+    min-height: 0;
   }
   #preview{
-    max-height: 100%;         /* 让 canvas 自适应可用高度 */
+    max-height: 100%;
   }
 }
 
@@ -764,7 +784,7 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
   <span class="sub" data-i18n="subtitle">上传图片 · 提取双色 · 生成波点</span>
   <div class="header-right">
     <button class="lang-btn" id="langBtn" aria-label="switch language">EN</button>
-    <span class="stamp">v2.9</span>
+    <span class="stamp">v3.2</span>
   </div>
 </header>
 
@@ -800,6 +820,13 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
           <span class="color-name" data-i18n="bgColor">背景色</span>
           <span class="color-hex" id="bgHex">#f7f2e4</span>
         </label>
+      </div>
+      <div class="color-chips" id="colorChips">
+        <button class="chip" data-colors="teal"  data-i18n="cTeal">青绿</button>
+        <button class="chip" data-colors="pink"  data-i18n="cPink">粉</button>
+        <button class="chip" data-colors="lilac" data-i18n="cLilac">紫</button>
+        <button class="chip" data-colors="ink"   data-i18n="cInk">深棕</button>
+        <button class="chip" data-colors="night" data-i18n="cNight">夜</button>
       </div>
       <div class="contrast-row">
         <span class="de-value" id="deValue">ΔE 0</span>
@@ -895,12 +922,11 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
         <button class="chip active" data-preset="default" data-i18n="pDefault">默认</button>
         <button class="chip" data-preset="compact" data-i18n="pCompact">紧凑</button>
         <button class="chip" data-preset="sparse" data-i18n="pSparse">稀疏</button>
-        <button class="chip" data-preset="random" data-i18n="pRandom">随机</button>
+        <button class="chip" data-preset="texture" data-i18n="pTexture">纹理</button>
         <button class="chip" data-preset="pixel" data-i18n="pPixel">像素</button>
         <button class="chip" data-preset="heart" data-i18n="pHeart">爱心</button>
         <button class="chip" data-preset="star" data-i18n="pStar">星星</button>
         <button class="chip" data-preset="rain" data-i18n="pRain">雨滴</button>
-        <button class="chip" data-preset="social" data-i18n="pSocial">社交</button>
       </div>
     </section>
 
@@ -936,10 +962,9 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
 
 <script type="module">
 /* ==========================================================================
-   波点工厂 / Polka Maker — v2.9
-   - 修复：自定义图片上传区的小标签「图片」未随语言切换
-   - 修复：语言切换时画布未重绘，导致占位提示文字仍是旧语言
-   - 桌面端：操作栏内部滚动，预览区固定不动
+   波点工厂 / Polka Maker — v3.2
+   - 删除「反色」chip（与「⇄ 交换」按钮功能重叠）
+   - 快捷配色只保留：青绿 / 粉 / 紫 / 深棕 / 夜
    ========================================================================== */
 
 const I18N = {
@@ -958,6 +983,11 @@ const I18N = {
     bgColor: '背景色',
     swap: '⇄ 交换',
     reset: '↺ 恢复',
+    cTeal: '青绿',
+    cPink: '粉',
+    cLilac: '紫',
+    cInk: '深棕',
+    cNight: '夜',
     dots: '波点参数',
     radius: '半径',
     gap: '间距',
@@ -984,12 +1014,11 @@ const I18N = {
     pDefault: '默认',
     pCompact: '紧凑',
     pSparse: '稀疏',
-    pRandom: '随机',
+    pTexture: '纹理',
     pPixel: '像素',
     pHeart: '爱心',
     pStar: '星星',
     pRain: '雨滴',
-    pSocial: '社交',
     shuffle: '↻ 换排布',
     download: '↓ 下载',
     preview: '// 预览',
@@ -1028,6 +1057,11 @@ const I18N = {
     bgColor: 'BG',
     swap: '⇄ SWAP',
     reset: '↺ RESET',
+    cTeal: 'TEAL',
+    cPink: 'PINK',
+    cLilac: 'LILAC',
+    cInk: 'INK',
+    cNight: 'NIGHT',
     dots: 'DOTS',
     radius: 'radius',
     gap: 'gap',
@@ -1054,12 +1088,11 @@ const I18N = {
     pDefault: 'DEFAULT',
     pCompact: 'COMPACT',
     pSparse: 'SPARSE',
-    pRandom: 'RANDOM',
+    pTexture: 'TEXTURE',
     pPixel: 'PIXEL',
     pHeart: 'HEART',
     pStar: 'STAR',
     pRain: 'RAIN',
-    pSocial: 'SOCIAL',
     shuffle: '↻ SHUFFLE',
     download: '↓ SAVE',
     preview: '// PREVIEW',
@@ -1111,6 +1144,15 @@ const CONFIG = {
   canvas: { defaultWidth: 1600, defaultHeight: 1000, maxWidth: 6000, maxHeight: 6000 },
   export: { format: 'image/png', filenamePrefix: 'polka' },
   debug: { enabled: false, showGridGuides: false },
+};
+
+/* 快捷配色定义 */
+const COLOR_PRESETS = {
+  teal:  { dot: '#3d9090', bg: '#f7f2e4' },
+  pink:  { dot: '#e8b4d0', bg: '#f7f2e4' },
+  lilac: { dot: '#b8a0d8', bg: '#f7f2e4' },
+  ink:   { dot: '#4a4040', bg: '#f7f2e4' },
+  night: { dot: '#b8a0d8', bg: '#1a1a22' },
 };
 
 /* ============================ ColorService ============================== */
@@ -1537,7 +1579,6 @@ const CanvasRenderer = (() => {
           ctx.drawImage(cv, d.x - d.r, d.y - d.r, d.r * 2, d.r * 2);
         }
       } else {
-        // 未上传图片：画虚线占位 + 中央提示
         ctx.save();
         ctx.strokeStyle = 'rgba(74,64,64,0.22)';
         ctx.lineWidth = Math.max(1, W / 800);
@@ -1598,15 +1639,14 @@ const CanvasRenderer = (() => {
 /* =========================== PresetManager ============================== */
 const PresetManager = (() => {
   const P = {
-    default: { dot: { radius: 20, gap: 50, jitter: 0,  sizeVariance: 0,  arrangement: 'hex',    shape: 'circle' }, canvas: { width: 1600, height: 1000 } },
-    compact: { dot: { radius: 8,  gap: 10, jitter: 15, sizeVariance: 10, arrangement: 'hex',    shape: 'circle' }, canvas: { width: 1920, height: 1080 } },
-    sparse:  { dot: { radius: 24, gap: 60, jitter: 40, sizeVariance: 30, arrangement: 'hex',    shape: 'circle' }, canvas: { width: 1920, height: 1080 } },
-    random:  { dot: { radius: 14, gap: 24, jitter: 80, sizeVariance: 60, arrangement: 'random', shape: 'circle' }, canvas: { width: 1920, height: 1080 } },
-    pixel:   { dot: { radius: 6,  gap: 4,  jitter: 0,  sizeVariance: 0,  arrangement: 'grid',   shape: 'square' }, canvas: { width: 1080, height: 1080 } },
-    heart:   { dot: { radius: 20, gap: 40, jitter: 15, sizeVariance: 20, arrangement: 'hex',    shape: 'heart'  }, canvas: { width: 1080, height: 1080 } },
-    star:    { dot: { radius: 20, gap: 45, jitter: 25, sizeVariance: 30, arrangement: 'hex',    shape: 'star'   }, canvas: { width: 1080, height: 1080 } },
-    rain:    { dot: { radius: 24, gap: 50, jitter: 10, sizeVariance: 15, arrangement: 'hex',    shape: 'drop'   }, canvas: { width: 1080, height: 1920 } },
-    social:  { dot: { radius: 10, gap: 14, jitter: 20, sizeVariance: 15, arrangement: 'hex',    shape: 'circle' }, canvas: { width: 1080, height: 1080 } },
+    default: { dot: { radius: 20, gap: 50, jitter: 0,  sizeVariance: 0,  arrangement: 'hex',  shape: 'circle' }, canvas: { width: 1600, height: 1000 } },
+    compact: { dot: { radius: 8,  gap: 10, jitter: 15, sizeVariance: 10, arrangement: 'hex',  shape: 'circle' }, canvas: { width: 1920, height: 1080 } },
+    sparse:  { dot: { radius: 30, gap: 75, jitter: 40, sizeVariance: 30, arrangement: 'hex',  shape: 'circle' }, canvas: { width: 1920, height: 1080 } },
+    texture: { dot: { radius: 4,  gap: 2,  jitter: 0,  sizeVariance: 0,  arrangement: 'hex',  shape: 'circle' }, canvas: { width: 1600, height: 1000 } },
+    pixel:   { dot: { radius: 6,  gap: 4,  jitter: 0,  sizeVariance: 0,  arrangement: 'grid', shape: 'square' }, canvas: { width: 1080, height: 1080 } },
+    heart:   { dot: { radius: 20, gap: 40, jitter: 15, sizeVariance: 20, arrangement: 'hex',  shape: 'heart'  }, canvas: { width: 1080, height: 1080 } },
+    star:    { dot: { radius: 20, gap: 45, jitter: 25, sizeVariance: 30, arrangement: 'hex',  shape: 'star'   }, canvas: { width: 1080, height: 1080 } },
+    rain:    { dot: { radius: 24, gap: 50, jitter: 10, sizeVariance: 15, arrangement: 'hex',  shape: 'drop'   }, canvas: { width: 1080, height: 1920 } },
   };
   const applyToState = (id, state) => {
     const p = P[id];
@@ -1832,6 +1872,19 @@ const UIManager = (() => {
       state.source = 'auto'; syncColorUI(); scheduleRender();
     });
   }
+  function bindColorChips() {
+    document.querySelectorAll('#colorChips .chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const c = COLOR_PRESETS[btn.dataset.colors];
+        if (!c) return;
+        state.dotColor = hexToRgb(c.dot);
+        state.backgroundColor = hexToRgb(c.bg);
+        state.source = 'manual';
+        syncColorUI();
+        scheduleRender();
+      });
+    });
+  }
   function bindSliders() {
     [['radius','vRadius',v=>v+'px'],['gap','vGap',v=>v+'px'],
      ['jitter','vJitter',v=>v+'%'],['sizeVariance','vSize',v=>v+'%']]
@@ -1901,7 +1954,14 @@ const UIManager = (() => {
       }, CONFIG.export.format);
     });
   }
-  function bind() { bindColors(); bindSliders(); bindCanvas(); bindPresets(); bindActions(); }
+  function bind() {
+    bindColors();
+    bindColorChips();
+    bindSliders();
+    bindCanvas();
+    bindPresets();
+    bindActions();
+  }
   return { bind };
 })();
 
