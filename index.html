@@ -52,6 +52,10 @@
   --fs-drop-hint: 15px;
   --fs-de-hint: 14px;
 
+  /* 颜色区统一间距 */
+  --color-pad: 8px;
+  --swatch-h: 44px;
+
   --panel-w: 340px;
   --header-pad-x: 26px;
   --header-pad-y: 16px;
@@ -289,22 +293,101 @@ header .stamp{
 /* ============ 颜色 ============ */
 .color-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .color-item{
-  display:flex;flex-direction:column;gap:6px;padding:9px;
+  display:flex;flex-direction:column;gap:8px;
+  padding:var(--color-pad);        /* 让色块到边框 = gap */
   border:2px solid var(--ink);background:rgba(255,255,255,.7);
-  cursor:pointer;transition:.18s;
+  transition:.18s;
   box-shadow:3px 3px 0 var(--ink);
 }
 .color-item:nth-child(1){transform:rotate(-.8deg)}
 .color-item:nth-child(2){transform:rotate(.8deg)}
-.color-item:hover{transform:rotate(0deg) translate(1px,1px);box-shadow:2px 2px 0 var(--ink)}
-.color-item input[type=color]{
-  width:100%;height:44px;padding:0;
+
+/* 双色色块组：两个色块等宽，间距 = 边框留白 */
+.color-swatches{
+  display:flex;
+  gap:var(--color-pad);            /* 和 padding 一致 */
+  align-items:stretch;
+}
+.swatch{
+  height:var(--swatch-h);
+  flex:1 1 0;                      /* 各占一半，均分 */
+  min-width:0;
+  padding:0;
   border:1.5px solid var(--ink);border-radius:0;
+  background:rgba(255,255,255,.6);
+  cursor:pointer;position:relative;
+  display:flex;align-items:center;justify-content:center;
+  transition:.15s;
+}
+.swatch--color{
+  overflow:hidden;
+}
+.swatch--color input[type=color]{
+  width:100%;height:100%;padding:0;border:none;border-radius:0;
   background:none;cursor:pointer;
 }
-.color-item input[type=color]::-webkit-color-swatch-wrapper{padding:0}
-.color-item input[type=color]::-webkit-color-swatch{border:none;border-radius:0}
-.color-item input[type=color]::-moz-color-swatch{border:none;border-radius:0}
+.swatch--color input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+.swatch--color input[type=color]::-webkit-color-swatch{border:none;border-radius:0}
+.swatch--color input[type=color]::-moz-color-swatch{border:none;border-radius:0}
+
+.swatch--add{
+  color:var(--ink-soft);
+}
+.swatch--add:not(.active){
+  background-image:repeating-linear-gradient(45deg,transparent 0 4px,rgba(74,64,64,.18) 4px 8px);
+}
+.swatch--add:hover{
+  border-color:var(--teal);
+  color:var(--teal-deep);
+}
+.swatch--add.active{
+  color:transparent;
+}
+.swatch--add.active:hover{
+  box-shadow:0 0 0 2px var(--teal) inset;
+}
+
+.swatch__plus{
+  font-family:var(--font-mono);font-size:22px;line-height:1;
+  user-select:none;pointer-events:none;
+}
+.swatch__close{
+  position:absolute;top:-9px;right:-9px;
+  width:18px;height:18px;
+  background:var(--ink);color:var(--paper);
+  border-radius:50%;
+  font-family:var(--font-mono);font-size:13px;line-height:1;
+  display:none;align-items:center;justify-content:center;
+  cursor:pointer;z-index:2;user-select:none;
+  transition:.15s;
+}
+.swatch--add.active .swatch__close{display:flex}
+.swatch__close:hover{background:#c46a3d;transform:scale(1.15)}
+
+/* 背景色：整行宽的色块 */
+.color-item--bg input[type=color]{
+  width:100%;
+  height:var(--swatch-h);
+  padding:0;
+  border:1.5px solid var(--ink);
+  border-radius:0;
+  background:none;
+  cursor:pointer;
+  display:block;
+  flex:none;
+}
+.color-item--bg input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+.color-item--bg input[type=color]::-webkit-color-swatch{border:none;border-radius:0}
+.color-item--bg input[type=color]::-moz-color-swatch{border:none;border-radius:0}
+
+.visually-hidden{
+  position:absolute !important;
+  width:1px;height:1px;
+  padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);
+  white-space:nowrap;border:0;
+}
+
 .color-name{
   font-family:var(--font-title);font-size:var(--fs-color-name);
   color:var(--ink-soft);letter-spacing:.06em;line-height:1.2;
@@ -389,6 +472,9 @@ select,input[type=number]{
   padding:4px 8px;
 }
 select{flex:1;min-height:36px}
+select option:disabled{
+  color:var(--ink-faint);
+}
 input[type=number]{width:100%;-moz-appearance:textfield;font-family:var(--font-mono);font-size:15px}
 input[type=number]::-webkit-outer-spin-button,
 input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
@@ -550,10 +636,11 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
     --panel-pad: 14px 14px;
     --stage-pad: 20px;
     --panel-gap: 14px;
+    --color-pad: 7px;
+    --swatch-h: 40px;
   }
   header h1{font-size: calc(var(--fs-title) - 2px)}
   .drop{padding:14px 10px}
-  .color-item input[type=color]{height:40px}
 }
 
 /* ==================================================================
@@ -567,6 +654,8 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
     --stage-pad: 12px;
     --panel-gap: 14px;
     --controls-gap: 8px;
+    --color-pad: 7px;
+    --swatch-h: 40px;
 
     --fs-title: 18px;
     --fs-section: 14px;
@@ -649,8 +738,7 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
   .deco-star.s1,.deco-star.s2{display:none}
 
   .drop{padding:14px 10px}
-  .color-item{padding:8px}
-  .color-item input[type=color]{height:44px}
+  .color-item{padding:var(--color-pad)}
   .contrast-row{padding:7px 10px}
 
   .actions{
@@ -689,6 +777,11 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
    触摸设备
    ================================================================== */
 @media (hover: none) and (pointer: coarse){
+  :root{
+    --color-pad: 9px;
+    --swatch-h: 48px;
+  }
+
   input[type=range]{height:8px}
   input[type=range]::-webkit-slider-thumb{width:22px;height:22px}
   input[type=range]::-moz-range-thumb{width:22px;height:22px}
@@ -698,7 +791,7 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
   .lang-btn{min-height:40px}
   select{min-height:40px;padding:6px 10px}
   .drop{padding:20px 12px}
-  .color-item input[type=color]{height:52px}
+  .swatch__close{width:22px;height:22px;font-size:14px;top:-11px;right:-11px}
   .src-tag{padding:3px 9px 5px}
 }
 
@@ -707,11 +800,12 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
     --header-pad-x: 12px;
     --panel-pad: 12px 12px 96px;
     --stage-pad: 10px;
+    --color-pad: 6px;
+    --swatch-h: 36px;
   }
   header h1{font-size:16px}
   .stage{height:36dvh;min-height:180px}
   .color-row{gap:8px}
-  .color-item input[type=color]{height:40px}
 }
 
 @media (max-width: 767px) and (orientation: landscape) and (max-height: 500px){
@@ -784,7 +878,7 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
   <span class="sub" data-i18n="subtitle">上传图片 · 提取双色 · 生成波点</span>
   <div class="header-right">
     <button class="lang-btn" id="langBtn" aria-label="switch language">EN</button>
-    <span class="stamp">v3.2</span>
+    <span class="stamp">v3.5</span>
   </div>
 </header>
 
@@ -810,16 +904,25 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
         <span class="src-tag" id="srcTag" data-i18n="auto">自动</span>
       </div>
       <div class="color-row">
-        <label class="color-item">
-          <input type="color" id="dotColor" value="#3d9090">
+        <div class="color-item">
+          <div class="color-swatches">
+            <label class="swatch swatch--color">
+              <input type="color" id="dotColor" value="#3d9090">
+            </label>
+            <button type="button" id="dotColor2Btn" class="swatch swatch--add" aria-label="Add second color">
+              <span class="swatch__plus">+</span>
+              <span class="swatch__close" id="dotColor2Close" aria-label="Remove second color">×</span>
+            </button>
+            <input type="color" id="dotColor2" value="#2a6b6b" class="visually-hidden" tabindex="-1" aria-hidden="true">
+          </div>
           <span class="color-name" data-i18n="dotColor">波点色</span>
           <span class="color-hex" id="dotHex">#3d9090</span>
-        </label>
-        <label class="color-item">
+        </div>
+        <div class="color-item color-item--bg">
           <input type="color" id="bgColor" value="#f7f2e4">
           <span class="color-name" data-i18n="bgColor">背景色</span>
           <span class="color-hex" id="bgHex">#f7f2e4</span>
-        </label>
+        </div>
       </div>
       <div class="color-chips" id="colorChips">
         <button class="chip" data-colors="teal"  data-i18n="cTeal">青绿</button>
@@ -942,6 +1045,7 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
   <h3 data-i18n="dbgTitle">// 调试</h3>
   <div class="kv">
     <span data-i18n="dbgDot">波点色</span><b id="dbgDot">—</b>
+    <span data-i18n="dbgDot2">副波点色</span><b id="dbgDot2">—</b>
     <span data-i18n="dbgBg">背景色</span><b id="dbgBg">—</b>
     <span data-i18n="dbgDe">对比 ΔE</span><b id="dbgDe">—</b>
     <span data-i18n="dbgSize">画布</span><b id="dbgSize">—</b>
@@ -962,9 +1066,9 @@ hr{border:none;border-top:2px dashed var(--line);margin:4px 0}
 
 <script type="module">
 /* ==========================================================================
-   波点工厂 / Polka Maker — v3.2
-   - 删除「反色」chip（与「⇄ 交换」按钮功能重叠）
-   - 快捷配色只保留：青绿 / 粉 / 紫 / 深棕 / 夜
+   波点工厂 / Polka Maker — v3.5
+   - 颜色区对齐：色块到边框 = 色块间距
+   - 两个色块等宽，不再强制正方形
    ========================================================================== */
 
 const I18N = {
@@ -1024,6 +1128,7 @@ const I18N = {
     preview: '// 预览',
     dbgTitle: '// 调试',
     dbgDot: '波点色',
+    dbgDot2: '副波点色',
     dbgBg: '背景色',
     dbgDe: '对比 ΔE',
     dbgSize: '画布',
@@ -1098,6 +1203,7 @@ const I18N = {
     preview: '// PREVIEW',
     dbgTitle: '// DEBUG',
     dbgDot: 'dot',
+    dbgDot2: 'dot B',
     dbgBg: 'bg',
     dbgDe: 'ΔE',
     dbgSize: 'canvas',
@@ -1280,6 +1386,14 @@ const ColorService = (() => {
   return { rgbToLab, labToRgb, deltaE, deltaELab, deltaE76, deltaE2000, adjustForContrast };
 })();
 
+/* 从主色派生副色：色相和饱和度不变，明度差一档 */
+function deriveSimilarColor(rgb) {
+  const lab = ColorService.rgbToLab(rgb.r, rgb.g, rgb.b);
+  const deltaL = lab.L > 45 ? -22 : 22;
+  const newL = Math.max(10, Math.min(90, lab.L + deltaL));
+  return ColorService.labToRgb(newL, lab.a, lab.b);
+}
+
 /* ============================ ColorExtractor ============================ */
 const ColorExtractor = (() => {
   function sampleToCanvas(img, N) {
@@ -1388,6 +1502,7 @@ const DotEngine = (() => {
         dots.push({
           x: rnd() * W, y: rnd() * H,
           r: Math.max(0.4, radius * (1 + (rnd() - 0.5) * sizeVariance)),
+          row: 0,
         });
       }
       return dots;
@@ -1401,7 +1516,7 @@ const DotEngine = (() => {
         const x = col * step + offset - step + (rnd() - 0.5) * step * jitter;
         const y = row * rowH - rowH + (rnd() - 0.5) * rowH * jitter;
         const r = Math.max(0.4, radius * (1 + (rnd() - 0.5) * sizeVariance));
-        dots.push({ x, y, r });
+        dots.push({ x, y, r, row });
       }
     }
     return dots;
@@ -1510,15 +1625,13 @@ const CanvasRenderer = (() => {
     }
   }
 
-  /* 自定义图片缓存 */
   const CUSTOM_CACHE_SIZE = 256;
-  let customCacheCv = null;
-  let customCacheSrc = null;
+  const customCache = new Map();
 
   function getCustomCanvas(colorHex) {
     const img = state.customImage;
     if (!img) return null;
-    if (customCacheCv && customCacheSrc === colorHex) return customCacheCv;
+    if (customCache.has(colorHex)) return customCache.get(colorHex);
 
     const S = CUSTOM_CACHE_SIZE;
     const cv = document.createElement('canvas');
@@ -1536,14 +1649,12 @@ const CanvasRenderer = (() => {
     c.fillStyle = colorHex;
     c.fillRect(0, 0, S, S);
 
-    customCacheCv = cv;
-    customCacheSrc = colorHex;
+    customCache.set(colorHex, cv);
     return cv;
   }
 
   function invalidateCustomCache() {
-    customCacheCv = null;
-    customCacheSrc = null;
+    customCache.clear();
   }
 
   function render(state) {
@@ -1571,11 +1682,16 @@ const CanvasRenderer = (() => {
     });
 
     const shape = state.params.shape;
+    const useDouble = !!state.dotColor2;
 
     if (shape === 'custom') {
-      const cv = getCustomCanvas(rgbToHex(state.dotColor));
-      if (cv) {
+      const cvA = getCustomCanvas(rgbToHex(state.dotColor));
+      const cvB = useDouble ? getCustomCanvas(rgbToHex(state.dotColor2)) : null;
+
+      if (cvA) {
         for (const d of dots) {
+          const useB = cvB && (d.row % 2 === 1);
+          const cv = useB ? cvB : cvA;
           ctx.drawImage(cv, d.x - d.r, d.y - d.r, d.r * 2, d.r * 2);
         }
       } else {
@@ -1596,6 +1712,15 @@ const CanvasRenderer = (() => {
         ctx.textBaseline = 'middle';
         ctx.fillText(t('customEmptyHint'), W / 2, H / 2);
         ctx.restore();
+      }
+    } else if (useDouble) {
+      const colorA = rgbToHex(state.dotColor);
+      const colorB = rgbToHex(state.dotColor2);
+      for (const d of dots) {
+        ctx.fillStyle = (d.row % 2 === 1) ? colorB : colorA;
+        ctx.beginPath();
+        addShape(ctx, d.x, d.y, d.r, shape);
+        ctx.fill();
       }
     } else if (dots.length <= 8000) {
       ctx.fillStyle = rgbToHex(state.dotColor);
@@ -1672,6 +1797,7 @@ const state = {
   sampleCanvas: null,
   candidates: [],
   dotColor: { r: 61, g: 144, b: 144 },
+  dotColor2: null,
   backgroundColor: { r: 247, g: 242, b: 228 },
   autoPair: null,
   customImage: null,
@@ -1705,12 +1831,31 @@ function syncColorUI() {
   $('#bgColor').value = rgbToHex(state.backgroundColor);
   $('#dotHex').textContent = rgbToHex(state.dotColor);
   $('#bgHex').textContent = rgbToHex(state.backgroundColor);
+
+  const btn = $('#dotColor2Btn');
+  if (state.dotColor2) {
+    btn.classList.add('active');
+    btn.style.background = rgbToHex(state.dotColor2);
+    $('#dotColor2').value = rgbToHex(state.dotColor2);
+  } else {
+    btn.classList.remove('active');
+    btn.style.background = '';
+  }
+
+  const randomOpt = document.querySelector('#arrangement option[value="random"]');
+  if (randomOpt) randomOpt.disabled = !!state.dotColor2;
+  if (state.dotColor2 && state.params.arrangement === 'random') {
+    state.params.arrangement = 'hex';
+    $('#arrangement').value = 'hex';
+  }
+
   const dE = ColorService.deltaE(state.dotColor, state.backgroundColor);
   $('#deValue').textContent = 'ΔE ' + dE.toFixed(1);
   const hint = $('#deHint');
   if (dE >= 30) { hint.textContent = t('contrastGood'); hint.className = 'de-hint good'; }
   else if (dE >= CONFIG.color.minDeltaE) { hint.textContent = t('contrastOk'); hint.className = 'de-hint'; }
   else { hint.textContent = t('contrastLow'); hint.className = 'de-hint warn'; }
+
   const tag = $('#srcTag');
   tag.textContent = state.source === 'auto' ? t('auto') : t('manual');
   tag.className = state.source === 'auto' ? 'src-tag' : 'src-tag manual';
@@ -1839,6 +1984,9 @@ function runExtraction() {
       backgroundColor: { ...result.backgroundColor },
     };
     state.source = 'auto';
+    if (state.dotColor2) {
+      state.dotColor2 = deriveSimilarColor(state.dotColor);
+    }
   } catch (err) {
     console.error('extract failed:', err);
     const f = CONFIG.extractor.fallbackColors;
@@ -1861,17 +2009,53 @@ const UIManager = (() => {
       state.backgroundColor = hexToRgb(e.target.value); state.source = 'manual';
       syncColorUI(); scheduleRender();
     });
-    $('#swapColors').addEventListener('click', () => {
-      const tmp = state.dotColor; state.dotColor = state.backgroundColor; state.backgroundColor = tmp;
-      state.source = 'manual'; syncColorUI(); scheduleRender();
+
+    $('#dotColor2Btn').addEventListener('click', () => {
+      if (!state.dotColor2) {
+        state.dotColor2 = deriveSimilarColor(state.dotColor);
+        state.source = 'manual';
+        syncColorUI();
+        scheduleRender();
+      } else {
+        $('#dotColor2').click();
+      }
     });
+
+    $('#dotColor2Close').addEventListener('click', (e) => {
+      e.stopPropagation();
+      state.dotColor2 = null;
+      state.source = 'manual';
+      syncColorUI();
+      scheduleRender();
+    });
+
+    $('#dotColor2').addEventListener('input', (e) => {
+      state.dotColor2 = hexToRgb(e.target.value);
+      state.source = 'manual';
+      syncColorUI();
+      scheduleRender();
+    });
+
+    $('#swapColors').addEventListener('click', () => {
+      const tmp = state.dotColor;
+      state.dotColor = state.backgroundColor;
+      state.backgroundColor = tmp;
+      state.source = 'manual';
+      syncColorUI();
+      scheduleRender();
+    });
+
     $('#resetColors').addEventListener('click', () => {
       if (!state.autoPair) return;
       state.dotColor = { ...state.autoPair.dotColor };
       state.backgroundColor = { ...state.autoPair.backgroundColor };
-      state.source = 'auto'; syncColorUI(); scheduleRender();
+      state.dotColor2 = null;
+      state.source = 'auto';
+      syncColorUI();
+      scheduleRender();
     });
   }
+
   function bindColorChips() {
     document.querySelectorAll('#colorChips .chip').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -1879,12 +2063,14 @@ const UIManager = (() => {
         if (!c) return;
         state.dotColor = hexToRgb(c.dot);
         state.backgroundColor = hexToRgb(c.bg);
+        state.dotColor2 = null;
         state.source = 'manual';
         syncColorUI();
         scheduleRender();
       });
     });
   }
+
   function bindSliders() {
     [['radius','vRadius',v=>v+'px'],['gap','vGap',v=>v+'px'],
      ['jitter','vJitter',v=>v+'%'],['sizeVariance','vSize',v=>v+'%']]
@@ -1896,15 +2082,24 @@ const UIManager = (() => {
           scheduleRender();
         });
       });
+
     $('#arrangement').addEventListener('change', (e) => {
-      state.params.arrangement = e.target.value; scheduleRender();
+      let v = e.target.value;
+      if (state.dotColor2 && v === 'random') {
+        v = 'hex';
+        e.target.value = 'hex';
+      }
+      state.params.arrangement = v;
+      scheduleRender();
     });
+
     $('#shape').addEventListener('change', (e) => {
       state.params.shape = e.target.value;
       syncCustomRow();
       scheduleRender();
     });
   }
+
   function bindCanvas() {
     $('#cw').addEventListener('change', () => {
       state.canvasSize.width = Math.max(200, Math.min(CONFIG.canvas.maxWidth, +$('#cw').value || 1600));
@@ -1922,16 +2117,23 @@ const UIManager = (() => {
       });
     });
   }
+
   function bindPresets() {
     document.querySelectorAll('#presetChips .chip').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('#presetChips .chip').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         PresetManager.applyToState(btn.dataset.preset, state);
-        syncParamUI(); scheduleRender();
+        syncParamUI();
+        if (state.dotColor2 && state.params.arrangement === 'random') {
+          state.params.arrangement = 'hex';
+          $('#arrangement').value = 'hex';
+        }
+        scheduleRender();
       });
     });
   }
+
   function bindActions() {
     $('#shuffle').addEventListener('click', () => {
       state.params.seed = Math.floor(Math.random() * 1e9);
@@ -1954,6 +2156,7 @@ const UIManager = (() => {
       }, CONFIG.export.format);
     });
   }
+
   function bind() {
     bindColors();
     bindColorChips();
@@ -1982,6 +2185,7 @@ const DebugManager = (() => {
     const bgLab = ColorService.rgbToLab(state.backgroundColor.r, state.backgroundColor.g, state.backgroundColor.b);
     const dE = ColorService.deltaE(state.dotColor, state.backgroundColor);
     $('#dbgDot').textContent = `${rgbToHex(state.dotColor)} · L${dotLab.L.toFixed(0)}`;
+    $('#dbgDot2').textContent = state.dotColor2 ? rgbToHex(state.dotColor2) : '—';
     $('#dbgBg').textContent = `${rgbToHex(state.backgroundColor)} · L${bgLab.L.toFixed(0)}`;
     $('#dbgDe').textContent = dE.toFixed(1);
     $('#dbgSize').textContent = `${state.canvasSize.width}×${state.canvasSize.height}`;
@@ -2025,7 +2229,11 @@ const DebugManager = (() => {
     });
     $('#dbgExport').addEventListener('click', () => {
       const cfg = {
-        colors: { dot: rgbToHex(state.dotColor), background: rgbToHex(state.backgroundColor) },
+        colors: {
+          dot: rgbToHex(state.dotColor),
+          dot2: state.dotColor2 ? rgbToHex(state.dotColor2) : null,
+          background: rgbToHex(state.backgroundColor),
+        },
         params: { ...state.params },
         canvas: { ...state.canvasSize },
       };
@@ -2037,12 +2245,18 @@ const DebugManager = (() => {
     });
     window.__debug = {
       setDotColor: (r, g, b) => { state.dotColor = { r, g, b }; state.source = 'manual'; syncColorUI(); scheduleRender(); },
+      setDotColor2: (r, g, b) => { state.dotColor2 = { r, g, b }; state.source = 'manual'; syncColorUI(); scheduleRender(); },
+      clearDotColor2: () => { state.dotColor2 = null; syncColorUI(); scheduleRender(); },
       setBackgroundColor: (r, g, b) => { state.backgroundColor = { r, g, b }; state.source = 'manual'; syncColorUI(); scheduleRender(); },
       swapColors: () => { const tmp = state.dotColor; state.dotColor = state.backgroundColor; state.backgroundColor = tmp; syncColorUI(); scheduleRender(); },
       setDotParams: (p) => { Object.assign(state.params, p); syncParamUI(); scheduleRender(); },
       setShape: (shape) => { state.params.shape = shape; syncParamUI(); scheduleRender(); },
       exportConfig: () => JSON.stringify({
-        colors: { dot: rgbToHex(state.dotColor), bg: rgbToHex(state.backgroundColor) },
+        colors: {
+          dot: rgbToHex(state.dotColor),
+          dot2: state.dotColor2 ? rgbToHex(state.dotColor2) : null,
+          bg: rgbToHex(state.backgroundColor),
+        },
         params: state.params, canvas: state.canvasSize,
       }, null, 2),
     };
